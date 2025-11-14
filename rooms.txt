@@ -1,0 +1,4 @@
+101,Deluxe,1500000,2,Wifi, TV, AC, Ban công,View biển
+102,Standard,800000,2,Wifi, TV, AC
+103,Deluxe,1800000,3,Wifi, TV, AC, Minibar,View núi
+104,Standard,750000,1,Wifi, TV
