@@ -4,3 +4,4 @@ def test_register_login(db_session):
                     gender="male", dob="2000-01-01", phone="0123", address="HN")
     logged_in = login(db_session, "test@gmail.com", "123")
     assert logged_in.id == user.id
+#python src/main.py

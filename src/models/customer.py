@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Date, Enum
 from models.base import Base
 import enum
+from sqlalchemy.orm import relationship
 
 class Gender(enum.Enum):
     male = "male"
@@ -18,3 +19,4 @@ class Customer(Base):
     phone = Column(String)
     password_hash = Column(String, nullable=False)
     address = Column(String)
+    bookings = relationship("Booking", back_populates="customer")
