@@ -6,7 +6,7 @@ from datetime import time
 from sqlalchemy.orm import relationship
 
 class BookingStatus(enum.Enum):
-    confirmed = "confirmed"
+    confirmed = "Confirmed"
     cancelled = "cancelled"
 class Booking(Base):
     __tablename__ = "bookings"

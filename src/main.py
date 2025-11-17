@@ -6,11 +6,12 @@ from utils.load_rooms import load_rooms_from_file
 from services.auth_service import login, register, is_admin
 from services.room_service import search_rooms, get_room_by_number
 from controllers.admin_controller import admin_add_room, admin_edit_room, admin_delete_room
-from services.booking_service import create_booking
+#from services.booking_service import create_booking
 from models.room import Room
-from services.booking_service import get_bookings_by_customer, cancel_booking
+from services.booking_service import create_booking, get_bookings_by_customer, cancel_booking, get_all_bookings
 from datetime import datetime, date  # ← THÊM `date`
 from models.customer import Customer
+from controllers.admin_controller import admin_view_customers, admin_edit_booking, admin_cancel_booking
 #from sqlalchemy import text
 
 # ========================================
@@ -93,6 +94,36 @@ def view_my_bookings(db, user):
         except Exception as e:
             print(f"Không thể hủy: {e}")
 
+def admin_view_all_bookings(db):
+    print("\n" + "="*80)
+    print("                DANH SÁCH TẤT CẢ BOOKING")
+    print("="*80)
+    
+    bookings = get_all_bookings(db)
+    
+    if not bookings:
+        print("  Chưa có booking nào!")
+        print("="*80)
+        input("\nNhấn Enter để tiếp tục...")
+        return
+
+    for b in bookings:
+        status_icon = {
+            "Confirmed": "Đã xác nhận",
+            "Cancelled": "Đã hủy"
+        }.get(b.status.value, "Không rõ")
+
+        print(f"  #{b.id} | Khách: {b.customer.name} ({b.customer.email})")
+        print(f"     Phòng: {b.room.room_number} ({b.room.type})")
+        print(f"     Thời gian: {b.check_in} → {b.check_out}")
+        print(f"     Tổng tiền: {b.total_amount:,.0f} VND")
+        print(f"     Trạng thái: {status_icon}")
+        if b.notes:
+            print(f"     Ghi chú: {b.notes}")
+        print("-" * 80)
+
+    input("\nNhấn Enter để quay lại menu...")
+
 def admin_menu(db):
     print("\n--- ĐĂNG NHẬP ADMIN ---")
     email = input("Email admin: ").strip()
@@ -109,22 +140,19 @@ def admin_menu(db):
             print("\n" + "="*50)
             print("           MENU ADMIN")
             print("="*50)
-            print("1. Thêm phòng mới")
-            print("2. Chỉnh sửa phòng")
-            print("3. Xóa phòng")
-            print("4. Xem tất cả booking")
+            print("1. Quản lý phòng")
+            print("2. Quản lý khách hàng")
+            print("3. Quản lý booking")
             print("0. Đăng xuất")
             print("="*50)
             choice = input("Chọn: ").strip()
 
             if choice == "1":
-                admin_add_room(db)
+                admin_manage_room(db)
             elif choice == "2":
-                admin_edit_room(db)
+                admin_manage_customer(db)
             elif choice == "3":
-                admin_delete_room(db)
-            elif choice == "4":
-                print("Chức năng xem tất cả booking (sẽ viết sau)")
+                admin_manage_booking(db)
             elif choice == "0":
                 print("Đã đăng xuất!")
                 break
@@ -134,6 +162,71 @@ def admin_menu(db):
     except ValueError as e:
         print(f"Lỗi: {e}")
 
+# Hàm quản lý room (sub-menu cho admin)
+def admin_manage_room(db):
+    while True:
+        print("\n" + "="*50)
+        print("           QUẢN LÝ PHÒNG")
+        print("="*50)
+        print("1. Thêm phòng mới")
+        print("2. Chỉnh sửa phòng")
+        print("3. Xóa phòng")
+        print("0. Quay lại menu Admin")
+        print("="*50)
+        choice = input("Chọn: ").strip()
+
+        if choice == "1":
+            admin_add_room(db)
+        elif choice == "2":
+            admin_edit_room(db)
+        elif choice == "3":
+            admin_delete_room(db)
+        elif choice == "0":
+            break
+        else:
+            print("Lựa chọn không hợp lệ!")
+
+# Hàm quản lý customer (sub-menu cho admin)
+def admin_manage_customer(db):
+    while True:
+        print("\n" + "="*50)
+        print("           QUẢN LÝ KHÁCH HÀNG")
+        print("="*50)
+        print("1. Xem danh sách khách hàng")
+        print("0. Quay lại menu Admin")
+        print("="*50)
+        choice = input("Chọn: ").strip()
+
+        if choice == "1":
+            admin_view_customers(db)
+        elif choice == "0":
+            break
+        else:
+            print("Lựa chọn không hợp lệ!")
+
+# Hàm quản lý booking (sub-menu cho admin)
+def admin_manage_booking(db):
+    while True:
+        print("\n" + "="*50)
+        print("           QUẢN LÝ BOOKING")
+        print("="*50)
+        print("1. Xem danh sách booking")
+        print("2. Thay đổi đơn đặt phòng")
+        print("3. Hủy đơn đặt phòng")
+        print("0. Quay lại menu Admin")
+        print("="*50)
+        choice = input("Chọn: ").strip()
+
+        if choice == "1":
+            admin_view_all_bookings(db)
+        elif choice == "2":
+            admin_edit_booking(db)
+        elif choice == "3":
+            admin_cancel_booking(db)
+        elif choice == "0":
+            break
+        else:
+            print("Lựa chọn không hợp lệ!")
 
 def register_form(db):
     print("\n--- ĐĂNG KÝ TÀI KHOẢN ---")
@@ -299,22 +392,7 @@ def ensure_admin_exists(db):
         db.commit()
 
         print("Tạo Admin: admin@gmail.com / admin123")
-# ========================================
-# HÀM CHÍNH
-# ========================================
-#def debug_print_all_users(db):
-#    from models.customer import Customer
-#    print("\n" + "="*60)
-#    print("          DANH SÁCH TÀI KHOẢN TRONG HỆ THỐNG")
-#    print("="*60)
-#    users = db.query(Customer).all()
-#    if not users:
-#        print("  Chưa có tài khoản nào!")
-#    else:
-#        for u in users:
-#            role = "ADMIN" if u.email == "admin@gmail.com" or getattr(u, 'is_admin', False) else "KHÁCH"
-#            print(f"  [{u.id}] {u.name} | {u.email} | Mật khẩu: {u.password_hash[:10]}... | {role}")
-#    print("="*60)
+        
 def main():
     db = SessionLocal()
     Base.metadata.create_all(bind=engine)

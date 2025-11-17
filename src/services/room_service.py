@@ -3,7 +3,7 @@ from models.room import Room, RoomStatus
 from services.booking_service import is_room_available
 from datetime import date
 from models.room import Room
-
+from models.booking import Booking
 #def add_room(db: Session, **data):
 #    room = Room(**data)
 #    db.add(room)

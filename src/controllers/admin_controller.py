@@ -2,6 +2,10 @@ from sqlalchemy.orm import Session
 #from services.room_service import add_room
 from models.customer import Customer
 from services.room_service import add_room, edit_room, delete_room
+from models.booking import Booking
+from services.auth_service import is_admin
+from services.booking_service import get_all_bookings, edit_booking, cancel_booking
+
 
 def admin_add_room(db: Session):
     print("\n=== THÊM PHÒNG MỚI ===")
@@ -20,31 +24,7 @@ def admin_view_customers(db: Session):
     print("\n=== DANH SÁCH KHÁCH HÀNG ===")
     for c in customers:
         print(f"ID: {c.id} | {c.name} | {c.email}")
-
-# Hàm thêm phòng (nhập liệu từ admin)
-def admin_add_room(db: Session):
-    print("\n--- THÊM PHÒNG MỚI ---")
-    room_number = input("Số phòng: ").strip()
-    type = input("Loại phòng (Standard/Deluxe): ").strip()
-    max_occupancy = int(input("Số người tối đa: "))
-    amenities = input("Tiện ích (cách nhau bằng dấu phẩy): ").strip()
-    price_per_night = float(input("Giá mỗi đêm: "))
-    description = input("Mô tả (tùy chọn): ").strip()
-
-    try:
-        new_room = add_room(
-            db=db,
-            room_number=room_number,
-            type=type,
-            max_occupancy=max_occupancy,
-            amenities=amenities,
-            price_per_night=price_per_night,
-            description=description
-        )
-        print(f"Thêm phòng {new_room.room_number} thành công!")
-    except ValueError as e:
-        print(f"Lỗi: {e}")
-
+        
 # Hàm chỉnh sửa phòng (nhập liệu từ admin)
 def admin_edit_room(db: Session):
     print("\n--- CHỈNH SỬA PHÒNG ---")
@@ -82,3 +62,90 @@ def admin_delete_room(db: Session):
             print(f"Xóa phòng ID {room_id} thành công!")
     except ValueError as e:
         print(f"Lỗi: {e}")
+
+#Hàm xem ds customer
+def admin_view_customers(db: Session):
+    print("\n" + "="*80)
+    print("                DANH SÁCH TẤT CẢ KHÁCH HÀNG")
+    print("="*80)
+    
+    customers = db.query(Customer).all()
+    
+    if not customers:
+        print("  Chưa có khách hàng nào!")
+        print("="*80)
+        input("\nNhấn Enter để quay lại...")
+        return
+
+    for c in customers:
+        role = "ADMIN" if is_admin(c) else "KHÁCH HÀNG"
+        print(f"  ID: {c.id} | Tên: {c.name} | Email: {c.email}")
+        print(f"     Giới tính: {c.gender} | Ngày sinh: {c.dob} | SĐT: {c.phone}")
+        print(f"     Địa chỉ: {c.address or 'Không có'} | Vai trò: {role}")
+        print("-" * 80)
+
+    input("\nNhấn Enter để quay lại menu...")
+
+# Hàm thay đổi đơn đặt phòng (edit booking cho admin)
+def admin_edit_booking(db: Session):
+    print("\n--- THAY ĐỔI ĐƠN ĐẶT PHÒNG ---")
+    booking_id = int(input("Mã booking cần sửa: "))
+
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        print("Không tìm thấy booking!")
+        return
+
+    check_in_str = input("Ngày nhận phòng mới (YYYY-MM-DD, Enter bỏ qua): ").strip() or None
+    check_out_str = input("Ngày trả phòng mới (YYYY-MM-DD, Enter bỏ qua): ").strip() or None
+    phone = input("SĐT mới (Enter bỏ qua): ").strip() or None
+    total_amount = input("Tổng tiền mới (Enter bỏ qua): ").strip()
+    total_amount = float(total_amount) if total_amount else None
+    notes = input("Ghi chú mới (Enter bỏ qua): ").strip() or None
+
+    try:
+        updated_booking = edit_booking(
+            db=db,
+            booking_id=booking_id,
+            check_in=check_in_str,
+            check_out=check_out_str,
+            phone=phone,
+            total_amount=total_amount,
+            notes=notes
+        )
+        print(f"Chỉnh sửa booking #{updated_booking.id} thành công!")
+    except ValueError as e:
+        print(f"Lỗi: {e}")
+
+# Hàm hủy đơn đặt phòng (cho admin)
+def admin_cancel_booking(db: Session):
+    print("\n--- HỦY ĐƠN ĐẶT PHÒNG ---")
+    booking_id = int(input("Mã booking cần hủy: "))
+
+    try:
+        cancelled_booking = cancel_booking(db, booking_id)
+        print(f"Hủy booking #{cancelled_booking.id} thành công!")
+    except ValueError as e:
+        print(f"Lỗi: {e}")
+
+def admin_view_customers(db: Session):
+    print("\n" + "="*80)
+    print("                DANH SÁCH TẤT CẢ KHÁCH HÀNG")
+    print("="*80)
+    
+    customers = db.query(Customer).all()
+    
+    if not customers:
+        print("  Chưa có khách hàng nào!")
+        print("="*80)
+        input("\nNhấn Enter để quay lại...")
+        return
+
+    for c in customers:
+        role = "ADMIN" if is_admin(c) else "KHÁCH HÀNG"
+        print(f"  ID: {c.id} | Tên: {c.name} | Email: {c.email}")
+        print(f"     Giới tính: {c.gender} | Ngày sinh: {c.dob} | SĐT: {c.phone}")
+        print(f"     Địa chỉ: {c.address or 'Không có'} | Vai trò: {role}")
+        print("-" * 80)
+
+    input("\nNhấn Enter để quay lại menu...")

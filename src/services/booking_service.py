@@ -5,6 +5,8 @@ from datetime import date
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from datetime import datetime
+#from models.customer import Customer
 
 def is_room_available(db: Session, room_id: int, check_in: date, check_out: date) -> bool:
     overlapping = db.query(Booking).filter(
@@ -43,7 +45,7 @@ def create_booking(
         check_out=check_out,
         total_amount=total,
         notes=notes,
-        status=BookingStatus.confirmed
+        status=BookingStatus.Confirmed
     )
     db.add(booking)
     db.commit()
@@ -98,3 +100,73 @@ def cancel_booking(session, booking_id: int):
     booking.status = BookingStatus.cancelled
     session.commit()
     print(f"ĐÃ HỦY booking #{booking_id} thành công!")
+
+def get_all_bookings(db: Session):
+    """Lấy tất cả booking (dành cho Admin)"""
+    return db.query(Booking).order_by(Booking.id.desc()).all()
+
+# Thêm vào src/services/booking_service.py
+
+def edit_booking(db: Session, booking_id: int, check_in: str = None, check_out: str = None, phone: str = None, total_amount: float = None, notes: str = None) -> Booking:
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise ValueError("Booking không tồn tại!")
+
+    if check_in:
+        booking.check_in = datetime.strptime(check_in, "%Y-%m-%d").date()
+    if check_out:
+        booking.check_out = datetime.strptime(check_out, "%Y-%m-%d").date()
+    if phone:
+        booking.customer.phone = phone  # Cập nhật phone của customer
+    if total_amount is not None:
+        booking.total_amount = total_amount
+    if notes is not None:
+        booking.notes = notes
+
+    db.commit()
+    db.refresh(booking)
+    return booking
+
+def cancel_booking(db: Session, booking_id: int) -> Booking:
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise ValueError("Booking không tồn tại!")
+
+    if booking.status != BookingStatus.confirmed:
+        raise ValueError("Chỉ có thể hủy khi trạng thái là New!")
+
+    booking.status = BookingStatus.cancelled
+    db.commit()
+    db.refresh(booking)
+    return booking
+'''
+def admin_view_all_bookings(db):
+    print("\n" + "="*80)
+    print("                DANH SÁCH TẤT CẢ BOOKING")
+    print("="*80)
+    
+    bookings = get_all_bookings(db)
+    
+    if not bookings:
+        print("  Chưa có booking nào!")
+        print("="*80)
+        input("\nNhấn Enter để tiếp tục...")
+        return
+
+    for b in bookings:
+        status_icon = {
+            "Confirmed": "Đã xác nhận",
+            "Cancelled": "Đã hủy"
+        }.get(b.status.value, "Không rõ")
+
+        print(f"  #{b.id} | Khách: {b.customer.name} ({b.customer.email})")
+        print(f"     Phòng: {b.room.room_number} ({b.room.type})")
+        print(f"     Thời gian: {b.check_in} → {b.check_out}")
+        print(f"     Tổng tiền: {b.total_amount:,.0f} VND")
+        print(f"     Trạng thái: {status_icon}")
+        if b.notes:
+            print(f"     Ghi chú: {b.notes}")
+        print("-" * 80)
+
+    input("\nNhấn Enter để quay lại menu...")
+    '''
