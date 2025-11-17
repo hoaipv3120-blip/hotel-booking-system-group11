@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, Enum
+from sqlalchemy import Column, Integer, String, Date, Enum, Boolean
 from models.base import Base
 import enum
 from sqlalchemy.orm import relationship
@@ -19,4 +19,7 @@ class Customer(Base):
     phone = Column(String)
     password_hash = Column(String, nullable=False)
     address = Column(String)
+
+    is_admin = Column(Boolean, default=False)
+
     bookings = relationship("Booking", back_populates="customer")

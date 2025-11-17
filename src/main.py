@@ -5,15 +5,28 @@ from models.base import Base
 from utils.load_rooms import load_rooms_from_file
 from services.auth_service import login, register, is_admin
 from services.room_service import search_rooms, get_room_by_number
-from controllers.admin_controller import admin_add_room
+from controllers.admin_controller import admin_add_room, admin_edit_room, admin_delete_room
 from services.booking_service import create_booking
 from models.room import Room
 from services.booking_service import get_bookings_by_customer, cancel_booking
 from datetime import datetime, date  # ← THÊM `date`
+from models.customer import Customer
+#from sqlalchemy import text
 
 # ========================================
 # HÀM RIÊNG - PHẢI ĐỊNH NGHĨA TRƯỚC KHI DÙNG
 # ========================================
+
+def upgrade_database_schema(db):
+    """Tự động thêm cột is_admin nếu thiếu"""
+    inspector = db.inspect(db.engine)
+    columns = [col["name"] for col in inspector.get_columns("customers")]
+    if "is_admin" not in columns:
+        print("Đang cập nhật DB: thêm cột is_admin...")
+        with db.engine.connect() as conn:
+            conn.execute(text("ALTER TABLE customers ADD COLUMN is_admin BOOLEAN DEFAULT FALSE"))
+            conn.commit()
+        print("Cập nhật thành công!")
 
 def show_room_search(db):
     print("\n--- TÌM PHÒNG TRỐNG ---")
@@ -109,6 +122,12 @@ def admin_menu(db):
                 admin_add_room(db)
             elif choice == "3":
                 print("Chức năng xem tất cả booking (sẽ viết sau)")
+            elif choice == "4":
+                admin_add_room(db)
+            elif choice == "5":
+                admin_edit_room(db)
+            elif choice == "6":
+                admin_delete_room(db)
             elif choice == "0":
                 print("Đã đăng xuất!")
                 break
@@ -263,15 +282,49 @@ def customer_flow(db):
         else:
             print("Lựa chọn không hợp lệ!")
 
+# main.py
+def ensure_admin_exists(db):
+    from services.auth_service import register
+    admin = db.query(Customer).filter(Customer.email == "admin@gmail.com").first()
+    if not admin:
+        register(
+            db=db,
+            name="Quản Trị Viên",
+            email="admin@gmail.com",
+            password="admin123",
+            gender="other",
+            dob="1970-01-01",
+            phone="0000000000",
+            address="Hotel HQ",
+            is_admin=True
+        )
+        db.add(admin)
+        db.commit()
 
+        print("Tạo Admin: admin@gmail.com / admin123")
 # ========================================
 # HÀM CHÍNH
 # ========================================
+#def debug_print_all_users(db):
+#    from models.customer import Customer
+#    print("\n" + "="*60)
+#    print("          DANH SÁCH TÀI KHOẢN TRONG HỆ THỐNG")
+#    print("="*60)
+#    users = db.query(Customer).all()
+#    if not users:
+#        print("  Chưa có tài khoản nào!")
+#    else:
+#        for u in users:
+#            role = "ADMIN" if u.email == "admin@gmail.com" or getattr(u, 'is_admin', False) else "KHÁCH"
+#            print(f"  [{u.id}] {u.name} | {u.email} | Mật khẩu: {u.password_hash[:10]}... | {role}")
+#    print("="*60)
 def main():
     db = SessionLocal()
     Base.metadata.create_all(bind=engine)
     load_rooms_from_file(db, "rooms.txt")
-
+    #debug_print_all_users(db)
+    ensure_admin_exists(db)
+    #upgrade_database_schema(db)
     print("=== HỆ THỐNG ĐẶT PHÒNG KHÁCH SẠN - NHÓM 11 ===")
 
     while True:

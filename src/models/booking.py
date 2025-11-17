@@ -21,4 +21,4 @@ class Booking(Base):
     notes = Column(String, nullable=True)
 
     customer = relationship("Customer", back_populates="bookings")
-    room = relationship("Room")
+    room = relationship("Room", back_populates="bookings")

@@ -30,6 +30,6 @@ def login(db: Session, email: str, password: str):
         return customer
     raise ValueError("Sai email hoặc mật khẩu")
 
-def is_admin(customer: Customer) -> bool:
-    """Kiểm tra xem user có phải admin không (dựa vào email)"""
-    return customer.email in ["admin@gmail.com"]
+# services/auth_service.py
+def is_admin(customer: Customer):
+    return customer.is_admin
