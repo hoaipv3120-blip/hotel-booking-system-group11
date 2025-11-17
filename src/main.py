@@ -5,14 +5,15 @@ from models.base import Base
 from utils.load_rooms import load_rooms_from_file
 from services.auth_service import login, register, is_admin
 from services.room_service import search_rooms, get_room_by_number
-from controllers.admin_controller import admin_add_room, admin_edit_room, admin_delete_room
+from controllers.admin_controller import admin_add_room, admin_edit_room, admin_delete_room, admin_view_customers, admin_edit_booking
 #from services.booking_service import create_booking
 from models.room import Room
 from services.booking_service import create_booking, get_bookings_by_customer, cancel_booking, get_all_bookings
 from datetime import datetime, date  # ← THÊM `date`
 from models.customer import Customer
-from controllers.admin_controller import admin_view_customers, admin_edit_booking, admin_cancel_booking
+#from controllers.admin_controller import admin_view_customers, admin_edit_booking #, admin_cancel_booking
 #from sqlalchemy import text
+#from models.booking import Booking, BookingStatus
 
 # ========================================
 # HÀM RIÊNG - PHẢI ĐỊNH NGHĨA TRƯỚC KHI DÙNG
@@ -28,71 +29,6 @@ def upgrade_database_schema(db):
             conn.execute(text("ALTER TABLE customers ADD COLUMN is_admin BOOLEAN DEFAULT FALSE"))
             conn.commit()
         print("Cập nhật thành công!")
-
-def show_room_search(db):
-    print("\n--- TÌM PHÒNG TRỐNG ---")
-    rooms = search_rooms(db)
-    if not rooms:
-        print("Không có phòng nào!")
-        return
-    print(f"Tìm thấy {len(rooms)} phòng:")
-    for r in rooms:
-        print(f"  [{r.id}] {r.room_number} | {r.type} | {r.price_per_night:,} VND")
-    while True:
-        detail = input("\nNhập số phòng để xem chi tiết (0 để thoát): ").strip()
-        if detail == "0":
-            break
-        room = get_room_by_number(db, detail)
-        if not room:
-            print("Không tìm thấy phòng!")
-            continue
-        print(f"\nChi tiết {room.room_number}: {room.type}, {r.price_per_night:,} VND, {room.max_occupancy} người")
-        if room.description:
-            print(f"Mô tả: {room.description}")
-        if room.amenities:
-            print(f"Tiện ích: {room.amenities}")
-
-def view_my_bookings(db, user):
-    print("\n" + "="*60)
-    print("           DANH SÁCH BOOKING CỦA BẠN")
-    print("="*60)
-
-    bookings = get_bookings_by_customer(db, user.id)
-    if not bookings:
-        print("  Bạn chưa có booking nào!")
-        print("="*60)
-        input("\nNhấn Enter để quay lại...")
-        return
-
-    for b in bookings:
-        status = {
-            "New": "New",
-            "Confirmed": "Confirmed",
-            "Cancelled": "Cancelled"
-        }.get(b.status.value, "New")
-
-        print(f"  {status} Mã: #{b.id}")
-        print(f"     Phòng: {b.room.room_number} ({b.room.type})")
-        print(f"     Thời gian: {b.check_in} → {b.check_out}")
-        print(f"     Tổng tiền: {b.total_amount:,.0f} VND")
-        print(f"     Trạng thái: {b.status.value}")
-        if b.notes:
-            print(f"     Ghi chú: {b.notes}")
-        print("-" * 60)
-
-    # === HỦY BOOKING ===
-    while True:
-        cancel_id = input("\nNhập Mã booking để HỦY (0 để thoát): ").strip()
-        if cancel_id == "0":
-            break
-        try:
-            cancel_id = int(cancel_id)
-            cancel_booking(db, cancel_id)  # ← CHỈ 2 THAM SỐ
-            #print(f"Đã hủy booking #{cancel_id} thành công!")
-        except ValueError as e:
-            print(f"Lỗi: {e}")
-        except Exception as e:
-            print(f"Không thể hủy: {e}")
 
 def admin_view_all_bookings(db):
     print("\n" + "="*80)
@@ -162,6 +98,26 @@ def admin_menu(db):
     except ValueError as e:
         print(f"Lỗi: {e}")
 
+def ensure_admin_exists(db):
+    from services.auth_service import register
+    admin = db.query(Customer).filter(Customer.email == "admin@gmail.com").first()
+    if not admin:
+        register(
+            db=db,
+            name="Quản Trị Viên",
+            email="admin@gmail.com",
+            password="admin123",
+            gender="other",
+            dob="1970-01-01",
+            phone="0000000000",
+            address="Hotel HQ",
+            is_admin=True
+        )
+        #db.add(admin)
+        #db.commit()
+
+        print("Tạo Admin: admin@gmail.com / admin123")
+
 # Hàm quản lý room (sub-menu cho admin)
 def admin_manage_room(db):
     while True:
@@ -222,8 +178,39 @@ def admin_manage_booking(db):
         elif choice == "2":
             admin_edit_booking(db)
         elif choice == "3":
-            admin_cancel_booking(db)
+            #admin_cancel_booking(db)
+            print("\n--- HỦY ĐƠN ĐẶT PHÒNG (ADMIN) ---")
+            try:
+                booking_id = int(input("Nhập mã booking cần hủy: "))
+                cancel_booking(db, booking_id)  # ← DÙNG CHUNG HÀM, KHÔNG CẦN HÀM RIÊNG
+            except ValueError as e:
+                print(f"Lỗi: {e}")
+                input("Nhấn Enter để tiếp tục...")
         elif choice == "0":
+            break
+        else:
+            print("Lựa chọn không hợp lệ!")
+
+def customer_menu(db, user):
+    while True:
+        print("\n" + "="*50)
+        print("         MENU KHÁCH HÀNG")
+        print("="*50)
+        print("1. Tìm phòng")
+        print("2. Đặt phòng")
+        print("3. Xem booking của tôi")
+        print("0. Đăng xuất")
+        print("="*50)
+        choice = input("Chọn: ").strip()
+
+        if choice == "1":
+            show_room_search(db)
+        elif choice == "2":
+            book_room_flow(db, user)  # ← ĐÃ ĐỊNH NGHĨA TRƯỚC → OK!
+        elif choice == "3":
+            view_my_bookings(db, user)
+        elif choice == "0":
+            print("Đã đăng xuất!")
             break
         else:
             print("Lựa chọn không hợp lệ!")
@@ -325,31 +312,68 @@ def book_room_flow(db, user):
     except Exception as e:
         print(f"Đặt phòng thất bại: {e}")
 
-
-def customer_menu(db, user):
+def show_room_search(db):
+    print("\n--- TÌM PHÒNG TRỐNG ---")
+    rooms = search_rooms(db)
+    if not rooms:
+        print("Không có phòng nào!")
+        return
+    print(f"Tìm thấy {len(rooms)} phòng:")
+    for r in rooms:
+        print(f"  [{r.id}] {r.room_number} | {r.type} | {r.price_per_night:,} VND")
     while True:
-        print("\n" + "="*50)
-        print("         MENU KHÁCH HÀNG")
-        print("="*50)
-        print("1. Tìm phòng")
-        print("2. Đặt phòng")
-        print("3. Xem booking của tôi")
-        print("0. Đăng xuất")
-        print("="*50)
-        choice = input("Chọn: ").strip()
-
-        if choice == "1":
-            show_room_search(db)
-        elif choice == "2":
-            book_room_flow(db, user)  # ← ĐÃ ĐỊNH NGHĨA TRƯỚC → OK!
-        elif choice == "3":
-            view_my_bookings(db, user)
-        elif choice == "0":
-            print("Đã đăng xuất!")
+        detail = input("\nNhập số phòng để xem chi tiết (0 để thoát): ").strip()
+        if detail == "0":
             break
-        else:
-            print("Lựa chọn không hợp lệ!")
+        room = get_room_by_number(db, detail)
+        if not room:
+            print("Không tìm thấy phòng!")
+            continue
+        print(f"\nChi tiết {room.room_number}: {room.type}, {r.price_per_night:,} VND, {room.max_occupancy} người")
+        if room.description:
+            print(f"Mô tả: {room.description}")
+        if room.amenities:
+            print(f"Tiện ích: {room.amenities}")
 
+def view_my_bookings(db, user):
+    print("\n" + "="*60)
+    print("           DANH SÁCH BOOKING CỦA BẠN")
+    print("="*60)
+
+    bookings = get_bookings_by_customer(db, user.id)
+    if not bookings:
+        print("  Bạn chưa có booking nào!")
+        print("="*60)
+        input("\nNhấn Enter để quay lại...")
+        return
+
+    for b in bookings:
+        status = {
+            #"New": "New",
+            "Confirmed": "Confirmed",
+            "Cancelled": "Cancelled"
+        }.get(b.status.value, "New")
+
+        print(f"  {status} Mã: #{b.id}")
+        print(f"     Phòng: {b.room.room_number} ({b.room.type})")
+        print(f"     Thời gian: {b.check_in} → {b.check_out}")
+        print(f"     Tổng tiền: {b.total_amount:,.0f} VND")
+        print(f"     Trạng thái: {b.status.value}")
+        if b.notes:
+            print(f"     Ghi chú: {b.notes}")
+        print("-" * 60)
+
+    # === HỦY BOOKING ===
+    while True:
+        print("Nhập Mã booking để HỦY (0 để thoát): ", end="")
+        cancel_id = input().strip()
+        if cancel_id == "0":
+            break
+        try:
+            cancel_booking(db, int(cancel_id))  # ← GỌI HÀM MỚI
+        except ValueError as e:
+            print(f"Lỗi: {e}")
+            input("Nhấn Enter để tiếp tục...")
 
 def customer_flow(db):
     while True:
@@ -371,27 +395,6 @@ def customer_flow(db):
                 return
         else:
             print("Lựa chọn không hợp lệ!")
-
-# main.py
-def ensure_admin_exists(db):
-    from services.auth_service import register
-    admin = db.query(Customer).filter(Customer.email == "admin@gmail.com").first()
-    if not admin:
-        register(
-            db=db,
-            name="Quản Trị Viên",
-            email="admin@gmail.com",
-            password="admin123",
-            gender="other",
-            dob="1970-01-01",
-            phone="0000000000",
-            address="Hotel HQ",
-            is_admin=True
-        )
-        db.add(admin)
-        db.commit()
-
-        print("Tạo Admin: admin@gmail.com / admin123")
         
 def main():
     db = SessionLocal()

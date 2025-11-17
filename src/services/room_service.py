@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
-from models.room import Room, RoomStatus
+from models.room import Room
 from services.booking_service import is_room_available
 from datetime import date
-from models.room import Room
+#from models.room import Room
 from models.booking import Booking
 #def add_room(db: Session, **data):
 #    room = Room(**data)

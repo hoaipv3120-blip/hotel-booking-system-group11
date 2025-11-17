@@ -4,7 +4,7 @@ from models.customer import Customer
 from services.room_service import add_room, edit_room, delete_room
 from models.booking import Booking
 from services.auth_service import is_admin
-from services.booking_service import get_all_bookings, edit_booking, cancel_booking
+from services.booking_service import edit_booking, cancel_booking
 
 
 def admin_add_room(db: Session):
@@ -19,12 +19,6 @@ def admin_add_room(db: Session):
              max_occupancy=occupancy, description=desc, amenities=amenities)
     print("Thêm phòng thành công!")
 
-def admin_view_customers(db: Session):
-    customers = db.query(Customer).all()
-    print("\n=== DANH SÁCH KHÁCH HÀNG ===")
-    for c in customers:
-        print(f"ID: {c.id} | {c.name} | {c.email}")
-        
 # Hàm chỉnh sửa phòng (nhập liệu từ admin)
 def admin_edit_room(db: Session):
     print("\n--- CHỈNH SỬA PHÒNG ---")
@@ -116,36 +110,3 @@ def admin_edit_booking(db: Session):
         print(f"Chỉnh sửa booking #{updated_booking.id} thành công!")
     except ValueError as e:
         print(f"Lỗi: {e}")
-
-# Hàm hủy đơn đặt phòng (cho admin)
-def admin_cancel_booking(db: Session):
-    print("\n--- HỦY ĐƠN ĐẶT PHÒNG ---")
-    booking_id = int(input("Mã booking cần hủy: "))
-
-    try:
-        cancelled_booking = cancel_booking(db, booking_id)
-        print(f"Hủy booking #{cancelled_booking.id} thành công!")
-    except ValueError as e:
-        print(f"Lỗi: {e}")
-
-def admin_view_customers(db: Session):
-    print("\n" + "="*80)
-    print("                DANH SÁCH TẤT CẢ KHÁCH HÀNG")
-    print("="*80)
-    
-    customers = db.query(Customer).all()
-    
-    if not customers:
-        print("  Chưa có khách hàng nào!")
-        print("="*80)
-        input("\nNhấn Enter để quay lại...")
-        return
-
-    for c in customers:
-        role = "ADMIN" if is_admin(c) else "KHÁCH HÀNG"
-        print(f"  ID: {c.id} | Tên: {c.name} | Email: {c.email}")
-        print(f"     Giới tính: {c.gender} | Ngày sinh: {c.dob} | SĐT: {c.phone}")
-        print(f"     Địa chỉ: {c.address or 'Không có'} | Vai trò: {role}")
-        print("-" * 80)
-
-    input("\nNhấn Enter để quay lại menu...")
