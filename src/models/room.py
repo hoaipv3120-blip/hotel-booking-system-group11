@@ -4,9 +4,9 @@ import enum
 from sqlalchemy.orm import relationship
 
 class RoomStatus(enum.Enum):
-    AVAILABLE = "available"
-    OCCUPIED = "occupied"
-    CLEANING = "cleaning"
+    available = "available"
+    occupied = "occupied"
+    cleaning = "cleaning"
 
 class Room(Base):
     __tablename__ = "rooms"
@@ -16,7 +16,7 @@ class Room(Base):
     type = Column(String, nullable=False)  # Standard, Deluxe
     price_per_night = Column(Float, nullable=False)
     max_occupancy = Column(Integer, nullable=False)
-    status = Column(Enum(RoomStatus), default=RoomStatus.AVAILABLE)
+    status = Column(Enum(RoomStatus), default=RoomStatus.available)
     description = Column(String)
     amenities = Column(String)  # "wifi,tv,ac"
     bookings = relationship("Booking", back_populates="room")

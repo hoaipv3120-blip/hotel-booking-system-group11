@@ -109,25 +109,22 @@ def admin_menu(db):
             print("\n" + "="*50)
             print("           MENU ADMIN")
             print("="*50)
-            print("1. Tìm phòng")
-            print("2. Thêm phòng mới")
-            print("3. Xem tất cả booking")
+            print("1. Thêm phòng mới")
+            print("2. Chỉnh sửa phòng")
+            print("3. Xóa phòng")
+            print("4. Xem tất cả booking")
             print("0. Đăng xuất")
             print("="*50)
             choice = input("Chọn: ").strip()
 
             if choice == "1":
-                show_room_search(db)
+                admin_add_room(db)
             elif choice == "2":
-                admin_add_room(db)
-            elif choice == "3":
-                print("Chức năng xem tất cả booking (sẽ viết sau)")
-            elif choice == "4":
-                admin_add_room(db)
-            elif choice == "5":
                 admin_edit_room(db)
-            elif choice == "6":
+            elif choice == "3":
                 admin_delete_room(db)
+            elif choice == "4":
+                print("Chức năng xem tất cả booking (sẽ viết sau)")
             elif choice == "0":
                 print("Đã đăng xuất!")
                 break
