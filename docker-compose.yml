@@ -1,0 +1,12 @@
+# docker-compose.yml
+version: '3.8'
+services:
+  app:
+    build: .
+    container_name: hotel-booking-app
+    volumes:
+      - .:/app
+      - ./hotel.db:/app/hotel.db
+    tty: true
+    stdin_open: true
+    restart: unless-stopped

@@ -13,7 +13,7 @@ from datetime import datetime, date  # ← THÊM `date`
 from models.customer import Customer
 #from controllers.admin_controller import admin_view_customers, admin_edit_booking #, admin_cancel_booking
 #from sqlalchemy import text
-#from models.booking import Booking, BookingStatus
+from models.booking import Booking, BookingStatus
 
 # ========================================
 # HÀM RIÊNG - PHẢI ĐỊNH NGHĨA TRƯỚC KHI DÙNG
@@ -45,9 +45,9 @@ def admin_view_all_bookings(db):
 
     for b in bookings:
         status_icon = {
-            "Confirmed": "Đã xác nhận",
-            "Cancelled": "Đã hủy"
-        }.get(b.status.value, "Không rõ")
+            BookingStatus.confirmed: "Đã xác nhận",
+            BookingStatus.cancelled: "Đã hủy"
+        }.get(b.status, "Không rõ")
 
         print(f"  #{b.id} | Khách: {b.customer.name} ({b.customer.email})")
         print(f"     Phòng: {b.room.room_number} ({b.room.type})")
@@ -352,7 +352,7 @@ def view_my_bookings(db, user):
             #"New": "New",
             "Confirmed": "Confirmed",
             "Cancelled": "Cancelled"
-        }.get(b.status.value, "New")
+        }.get(b.status.value, "Confirmed")
 
         print(f"  {status} Mã: #{b.id}")
         print(f"     Phòng: {b.room.room_number} ({b.room.type})")
