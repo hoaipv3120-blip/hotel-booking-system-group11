@@ -3,8 +3,8 @@ from models.customer import Customer
 from services.room_service import add_room, edit_room, delete_room
 from models.booking import Booking
 from services.auth_service import is_admin
-from services.booking_service import edit_booking, cancel_booking
-
+from services.booking_service import edit_booking
+from models.room import Room, RoomStatus
 
 def admin_add_room(db: Session):
     print("\n=== THÊM PHÒNG MỚI ===")
@@ -109,3 +109,34 @@ def admin_edit_booking(db: Session):
         print(f"Chỉnh sửa booking #{updated_booking.id} thành công!")
     except ValueError as e:
         print(f"Lỗi: {e}")
+
+# Thêm vào admin_controller.py hoặc ngay dưới admin_manage_room
+def admin_view_rooms(db: Session):
+    print("\n" + "="*80)
+    print("                   DANH SÁCH TẤT CẢ CÁC PHÒNG")
+    print("="*80)
+    
+    rooms = db.query(Room).order_by(Room.room_number).all()
+    
+    if not rooms:
+        print("  Chưa có phòng nào trong hệ thống!")
+        print("="*80)
+        input("\nNhấn Enter để quay lại...")
+        return
+
+    print(f"  Tổng cộng: {len(rooms)} phòng")
+    print("-" * 80)
+    
+    for r in rooms:
+        status_vn = {
+            RoomStatus.available: "Trống",
+            RoomStatus.booked: "Đã đặt"
+        }.get(r.status, "Không rõ")
+        
+        print(f"  [{r.id:2}] {r.room_number:6} | {r.type:8} | {r.price_per_night:,.0f}đ/đêm | {r.max_occupancy} người | {status_vn}")
+        if r.description:
+            print(f"       → {r.description}")
+        print("       Tiện ích:", r.amenities or "Cơ bản")
+        print("-" * 80)
+
+    input("\nNhấn Enter để quay lại menu...")
