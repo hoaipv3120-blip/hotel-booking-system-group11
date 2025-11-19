@@ -10,9 +10,30 @@ def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode(), hashed.encode())
 
 def register(db: Session, **data):
-    if db.query(Customer).filter(Customer.email == data["email"]).first():
-        raise ValueError("Email đã tồn tại")
+    email = data.get("email", "").strip().lower()
+    phone = data.get("phone", "").strip()
+
+    # === EMAIL VALIDATE (đã có) ===
+    if not email:
+        raise ValueError("Email không được để trống!")
+    if "@" not in email:
+        raise ValueError("Email phải chứa ký tự @")
+    email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not re.match(email_regex, email):
+        raise ValueError("Email không hợp lệ! Ví dụ đúng: abc@gmail.com")
+
+    # === SỐ ĐIỆN THOẠI: ĐÚNG 10 SỐ + BẮT ĐẦU BẰNG 0 ===
+    if not phone:
+        raise ValueError("Số điện thoại không được để trống!")
     
+    phone_regex = r'^0\d{9}$'
+    if not re.match(phone_regex, phone):
+        raise ValueError("Số điện thoại phải có đúng 10 số và bắt đầu bằng 0 (VD: 0901234567)")
+
+    # Kiểm tra trùng email
+    if db.query(Customer).filter(Customer.email == email).first():
+        raise ValueError("Email này đã được sử dụng!")
+
     # CHUYỂN dob THÀNH date object
     if "dob" in data and isinstance(data["dob"], str):
         data["dob"] = datetime.strptime(data["dob"], "%Y-%m-%d").date()
@@ -33,3 +54,9 @@ def login(db: Session, email: str, password: str):
 # services/auth_service.py
 def is_admin(customer: Customer):
     return customer.is_admin
+
+import re
+
+def is_valid_email(email: str) -> bool:
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return re.fullmatch(pattern, email.strip()) is not None
