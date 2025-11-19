@@ -1,12 +1,38 @@
 # docker-compose.yml
-version: '3.8'
+version: '3.9'
+
 services:
+  db:
+    image: postgres:15-alpine
+    container_name: hotel-db
+    restart: always
+    environment:
+      POSTGRES_USER: hoteluser
+      POSTGRES_PASSWORD: hotel123
+      POSTGRES_DB: hoteldb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hoteluser -d hoteldb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   app:
     build: .
-    container_name: hotel-booking-app
+    container_name: hotel-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy   # ← CHỜ DB HOÀN TOÀN KHỎE MỚI CHẠY APP
+    environment:
+      DATABASE_URL: postgresql://hoteluser:hotel123@db:5432/hoteldb
     volumes:
       - .:/app
-      - ./hotel.db:/app/hotel.db
     tty: true
     stdin_open: true
-    restart: unless-stopped
+
+volumes:
+  postgres_data:

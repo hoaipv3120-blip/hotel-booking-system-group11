@@ -1,12 +1,32 @@
-# run.py
-import sys
 import os
+import sys
+import time
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import OperationalError
 
-# Thêm src vào path để import được
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
+# THÊM 2 DÒNG NÀY ĐỂ PYTHON BIẾT TÌM src VÀ database
+sys.path.append("/app")  # quan trọng nhất!
+sys.path.append("/app/src")
 
-# Chạy main
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://hoteluser:hotel123@db:5432/hoteldb")
+
+# Retry kết nối DB
+for i in range(15):
+    try:
+        engine = create_engine(DATABASE_URL)
+        with engine.connect() as conn:
+            print("Kết nối database thành công!")
+        break
+    except OperationalError:
+        print(f"Đang chờ PostgreSQL khởi động... ({i+1}/15)")
+        time.sleep(2)
+else:
+    print("Không thể kết nối database!")
+    exit(1)
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# BÂY GIỜ IMPORT BÌNH THƯỜNG – SẼ CHẠY NGON!
 from src.main import main
-
-if __name__ == "__main__":
-    main()
+main()
