@@ -1,4 +1,0 @@
-sqlalchemy==2.0.23
-bcrypt==4.1.2
-pytest==7.4.3
-pytest-cov==4.1.0
