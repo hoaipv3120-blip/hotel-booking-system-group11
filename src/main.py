@@ -2,14 +2,14 @@ from sqlalchemy.orm import Session
 from database.db import SessionLocal, engine
 from models.base import Base
 from utils.load_rooms import load_rooms_from_file
-from services.auth_service import login, register, is_admin, is_valid_email
-from services.room_service import search_rooms, get_room_by_number
-from controllers.admin_controller import admin_add_room, admin_edit_room, admin_delete_room, admin_view_customers, admin_edit_booking
+from services.auth_service import login, register, is_admin
+from services.room_service import search_rooms
+from controllers.admin_controller import admin_add_room, admin_edit_room, admin_delete_room, admin_view_customers, admin_edit_booking, admin_view_rooms
 from models.room import Room
 from services.booking_service import create_booking, get_bookings_by_customer, cancel_booking, get_all_bookings
-from datetime import datetime, date  # ← THÊM `date`
+from datetime import datetime, date  
 from models.customer import Customer
-from models.booking import Booking, BookingStatus
+from models.booking import BookingStatus
 
 def admin_view_all_bookings(db):
     print("\n" + "="*80)
@@ -106,6 +106,7 @@ def admin_manage_room(db):
         print("1. Thêm phòng mới")
         print("2. Chỉnh sửa phòng")
         print("3. Xóa phòng")
+        print("4. Xem danh sách phòng")
         print("0. Quay lại menu Admin")
         print("="*50)
         choice = input("Chọn: ").strip()
@@ -116,6 +117,8 @@ def admin_manage_room(db):
             admin_edit_room(db)
         elif choice == "3":
             admin_delete_room(db)
+        elif choice == "4":
+            admin_view_rooms(db)
         elif choice == "0":
             break
         else:
@@ -291,27 +294,70 @@ def book_room_flow(db, user):
         print(f"Đặt phòng thất bại: {e}")
 
 def show_room_search(db):
-    print("\n--- TÌM PHÒNG TRỐNG ---")
-    rooms = search_rooms(db)
-    if not rooms:
-        print("Không có phòng nào!")
+    print("\n" + "="*60)
+    print("              TÌM PHÒNG THEO YÊU CẦU")
+    print("="*60)
+
+    print("Để trống = không giới hạn")
+    type_input = input("Loại phòng (Standard/Deluxe): ").strip()
+    type_filter = type_input if type_input else None
+
+    price_input = input("Giá tối đa mỗi đêm (VND, ví dụ: 2000000): ").strip()
+    price_max = float(price_input) if price_input else float('inf')
+
+    guests_input = input("Số người ở: ").strip()
+    guests = int(guests_input) if guests_input else 1
+
+    print("\nNgày nhận/trả phòng (bắt buộc để kiểm tra phòng trống)")
+    check_in_str = input("Ngày nhận phòng (YYYY-MM-DD): ").strip()
+    check_out_str = input("Ngày trả phòng (YYYY-MM-DD): ").strip()
+
+    if not check_in_str or not check_out_str:
+        print("Phải nhập ngày nhận và trả phòng để tìm phòng trống!")
+        input("Nhấn Enter để tiếp tục...")
         return
-    print(f"Tìm thấy {len(rooms)} phòng:")
-    for r in rooms:
-        print(f"  [{r.id}] {r.room_number} | {r.type} | {r.price_per_night:,} VND")
-    while True:
-        detail = input("\nNhập số phòng để xem chi tiết (0 để thoát): ").strip()
-        if detail == "0":
-            break
-        room = get_room_by_number(db, detail)
-        if not room:
-            print("Không tìm thấy phòng!")
-            continue
-        print(f"\nChi tiết {room.room_number}: {room.type}, {r.price_per_night:,} VND, {room.max_occupancy} người")
-        if room.description:
-            print(f"Mô tả: {room.description}")
-        if room.amenities:
-            print(f"Tiện ích: {room.amenities}")
+
+    try:
+        from datetime import datetime
+        check_in = datetime.strptime(check_in_str, "%Y-%m-%d").date()
+        check_out = datetime.strptime(check_out_str, "%Y-%m-%d").date()
+
+        if check_in >= check_out:
+            print("Ngày trả phòng phải sau ngày nhận phòng!")
+            input("Nhấn Enter để tiếp tục...")
+            return
+        if check_in < date.today():
+            print("Không thể tìm ngày trong quá khứ!")
+            input("Nhấn Enter để tiếp tục...")
+            return
+
+        rooms = search_rooms(
+            db=db,
+            type=type_filter,
+            price_max=price_max,
+            guests=guests,
+            check_in=check_in,
+            check_out=check_out
+        )
+
+        print(f"\nTìm thấy {len(rooms)} phòng phù hợp:")
+        if not rooms:
+            print("Rất tiếc, hiện không có phòng nào trống theo yêu cầu của bạn!")
+            print("Gợi ý: thử nới lỏng điều kiện hoặc chọn ngày khác.")
+        else:
+            for r in rooms:
+                nights = (check_out - check_in).days
+                total = r.price_per_night * nights
+                print(f"\n[{r.id}] {r.room_number} | {r.type}")
+                print(f"    Giá: {r.price_per_night:,.0f} VND/đêm * {nights} đêm = {total:,.0f} VND")
+                print(f"    Tối đa {r.max_occupancy} người | Tiện ích: {r.amenities or 'Cơ bản'}")
+                if r.description:
+                    print(f"    → {r.description}")
+
+        input("\nNhấn Enter để quay lại...")
+    except ValueError as e:
+        print(f"Lỗi định dạng: {e}")
+        input("Nhấn Enter để tiếp tục...")
 
 def view_my_bookings(db, user):
     print("\n" + "="*60)

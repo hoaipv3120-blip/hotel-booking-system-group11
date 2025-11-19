@@ -16,10 +16,6 @@ def search_rooms(db: Session, type=None, price_min=0, price_max=float('inf'), gu
         return [r for r in rooms if is_room_available(db, r.id, check_in, check_out)]
     return rooms
 
-def get_room_by_number(db: Session, room_number: str) -> Room:
-    """Lấy phòng theo số phòng"""
-    return db.query(Room).filter(Room.room_number == room_number).first()
-
 # Hàm thêm phòng mới (cho admin)
 def add_room(db: Session, room_number: str, type: str, max_occupancy: int, amenities: str, price_per_night: float, description: str = "") -> Room:
     # Kiểm tra số phòng đã tồn tại chưa
@@ -76,3 +72,4 @@ def delete_room(db: Session, room_id: int) -> bool:
     db.delete(room)
     db.commit()
     return True
+    
