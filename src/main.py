@@ -1,34 +1,15 @@
-# === IMPORTS ===
 from sqlalchemy.orm import Session
 from database.db import SessionLocal, engine
 from models.base import Base
 from utils.load_rooms import load_rooms_from_file
-from services.auth_service import login, register, is_admin
+from services.auth_service import login, register, is_admin, is_valid_email
 from services.room_service import search_rooms, get_room_by_number
 from controllers.admin_controller import admin_add_room, admin_edit_room, admin_delete_room, admin_view_customers, admin_edit_booking
-#from services.booking_service import create_booking
 from models.room import Room
 from services.booking_service import create_booking, get_bookings_by_customer, cancel_booking, get_all_bookings
 from datetime import datetime, date  # ← THÊM `date`
 from models.customer import Customer
-#from controllers.admin_controller import admin_view_customers, admin_edit_booking #, admin_cancel_booking
-#from sqlalchemy import text
 from models.booking import Booking, BookingStatus
-
-# ========================================
-# HÀM RIÊNG - PHẢI ĐỊNH NGHĨA TRƯỚC KHI DÙNG
-# ========================================
-
-def upgrade_database_schema(db):
-    """Tự động thêm cột is_admin nếu thiếu"""
-    inspector = db.inspect(db.engine)
-    columns = [col["name"] for col in inspector.get_columns("customers")]
-    if "is_admin" not in columns:
-        print("Đang cập nhật DB: thêm cột is_admin...")
-        with db.engine.connect() as conn:
-            conn.execute(text("ALTER TABLE customers ADD COLUMN is_admin BOOLEAN DEFAULT FALSE"))
-            conn.commit()
-        print("Cập nhật thành công!")
 
 def admin_view_all_bookings(db):
     print("\n" + "="*80)
@@ -113,8 +94,6 @@ def ensure_admin_exists(db):
             address="Hotel HQ",
             is_admin=True
         )
-        #db.add(admin)
-        #db.commit()
 
         print("Tạo Admin: admin@gmail.com / admin123")
 
@@ -224,7 +203,6 @@ def register_form(db):
             break
         except ValueError:
             print("Lỗi: Nhập đúng định dạng YYYY-MM-DD (ví dụ: 2000-02-06)")
-
     data = {
         "name": input("Họ tên: ").strip(),
         "email": input("Email: ").strip(),
@@ -400,9 +378,7 @@ def main():
     db = SessionLocal()
     Base.metadata.create_all(bind=engine)
     load_rooms_from_file(db, "rooms.txt")
-    #debug_print_all_users(db)
     ensure_admin_exists(db)
-    #upgrade_database_schema(db)
     print("=== HỆ THỐNG ĐẶT PHÒNG KHÁCH SẠN - NHÓM 11 ===")
 
     while True:

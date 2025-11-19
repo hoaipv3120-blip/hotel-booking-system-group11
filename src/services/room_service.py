@@ -1,15 +1,8 @@
 from sqlalchemy.orm import Session
-from models.room import Room
+from models.room import Room, RoomStatus
 from services.booking_service import is_room_available
 from datetime import date
-#from models.room import Room
 from models.booking import Booking
-#def add_room(db: Session, **data):
-#    room = Room(**data)
-#    db.add(room)
-#    db.commit()
-#    db.refresh(room)
-#    return room
 
 def search_rooms(db: Session, type=None, price_min=0, price_max=float('inf'), guests=1, check_in: date = None, check_out: date = None):
     query = db.query(Room).filter(

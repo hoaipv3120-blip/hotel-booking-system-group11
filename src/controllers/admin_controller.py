@@ -1,5 +1,4 @@
 from sqlalchemy.orm import Session
-#from services.room_service import add_room
 from models.customer import Customer
 from services.room_service import add_room, edit_room, delete_room
 from models.booking import Booking
