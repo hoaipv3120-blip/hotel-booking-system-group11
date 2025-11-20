@@ -373,7 +373,6 @@ def view_my_bookings(db, user):
 
     for b in bookings:
         status = {
-            #"New": "New",
             "Confirmed": "Confirmed",
             "Cancelled": "Cancelled"
         }.get(b.status.value, "Confirmed")
@@ -394,7 +393,7 @@ def view_my_bookings(db, user):
         if cancel_id == "0":
             break
         try:
-            cancel_booking(db, int(cancel_id))  # ← GỌI HÀM MỚI
+            cancel_booking(db, int(cancel_id))  
         except ValueError as e:
             print(f"Lỗi: {e}")
             input("Nhấn Enter để tiếp tục...")

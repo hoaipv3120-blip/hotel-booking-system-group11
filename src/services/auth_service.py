@@ -2,6 +2,7 @@ import bcrypt
 from sqlalchemy.orm import Session
 from models.customer import Customer
 from datetime import datetime
+import re
 
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
@@ -13,7 +14,6 @@ def register(db: Session, **data):
     email = data.get("email", "").strip().lower()
     phone = data.get("phone", "").strip()
 
-    # === EMAIL VALIDATE (đã có) ===
     if not email:
         raise ValueError("Email không được để trống!")
     if "@" not in email:
@@ -22,7 +22,6 @@ def register(db: Session, **data):
     if not re.match(email_regex, email):
         raise ValueError("Email không hợp lệ! Ví dụ đúng: abc@gmail.com")
 
-    # === SỐ ĐIỆN THOẠI: ĐÚNG 10 SỐ + BẮT ĐẦU BẰNG 0 ===
     if not phone:
         raise ValueError("Số điện thoại không được để trống!")
     
@@ -34,7 +33,7 @@ def register(db: Session, **data):
     if db.query(Customer).filter(Customer.email == email).first():
         raise ValueError("Email này đã được sử dụng!")
 
-    # CHUYỂN dob THÀNH date object
+    # Chuyển dob thành date object
     if "dob" in data and isinstance(data["dob"], str):
         data["dob"] = datetime.strptime(data["dob"], "%Y-%m-%d").date()
     
@@ -51,11 +50,8 @@ def login(db: Session, email: str, password: str):
         return customer
     raise ValueError("Sai email hoặc mật khẩu")
 
-# services/auth_service.py
 def is_admin(customer: Customer):
     return customer.is_admin
-
-import re
 
 def is_valid_email(email: str) -> bool:
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'

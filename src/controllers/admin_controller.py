@@ -110,7 +110,6 @@ def admin_edit_booking(db: Session):
     except ValueError as e:
         print(f"Lỗi: {e}")
 
-# Thêm vào admin_controller.py hoặc ngay dưới admin_manage_room
 def admin_view_rooms(db: Session):
     print("\n" + "="*80)
     print("                   DANH SÁCH TẤT CẢ CÁC PHÒNG")

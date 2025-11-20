@@ -5,8 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
 
-# THÊM 2 DÒNG NÀY ĐỂ PYTHON BIẾT TÌM src VÀ database
-sys.path.append("/app")  # quan trọng nhất!
+sys.path.append("/app")  
 sys.path.append("/app/src")
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://hoteluser:hotel123@db:5432/hoteldb")
@@ -27,6 +26,5 @@ else:
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# BÂY GIỜ IMPORT BÌNH THƯỜNG – SẼ CHẠY NGON!
 from src.main import main
 main()
