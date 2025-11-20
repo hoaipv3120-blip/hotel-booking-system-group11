@@ -66,7 +66,6 @@ def cancel_booking(session, booking_id: int):
     return booking
 
 def get_all_bookings(db: Session):
-    """Lấy tất cả booking (dành cho Admin)"""
     return db.query(Booking).order_by(Booking.id.desc()).all()
 
 def edit_booking(db: Session, booking_id: int, check_in: str = None, check_out: str = None, phone: str = None, total_amount: float = None, notes: str = None) -> Booking:
@@ -79,7 +78,7 @@ def edit_booking(db: Session, booking_id: int, check_in: str = None, check_out: 
     if check_out:
         booking.check_out = datetime.strptime(check_out, "%Y-%m-%d").date()
     if phone:
-        booking.customer.phone = phone  # Cập nhật phone của customer
+        booking.customer.phone = phone  
     if total_amount is not None:
         booking.total_amount = total_amount
     if notes is not None:

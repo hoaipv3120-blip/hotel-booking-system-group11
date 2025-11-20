@@ -18,7 +18,6 @@ def search_rooms(db: Session, type=None, price_min=0, price_max=float('inf'), gu
 
 # Hàm thêm phòng mới (cho admin)
 def add_room(db: Session, room_number: str, type: str, max_occupancy: int, amenities: str, price_per_night: float, description: str = "") -> Room:
-    # Kiểm tra số phòng đã tồn tại chưa
     existing_room = db.query(Room).filter(Room.room_number == room_number).first()
     if existing_room:
         raise ValueError(f"Phòng {room_number} đã tồn tại!")

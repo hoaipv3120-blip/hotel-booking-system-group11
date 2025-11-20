@@ -1,4 +1,3 @@
-# src/utils/load_rooms.py
 import os
 from services.room_service import add_room
 from models.room import Room
